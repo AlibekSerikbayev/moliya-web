@@ -21,15 +21,19 @@ st.set_page_config(
 
 load_dotenv()
 
-# ==================== MOBIL VA DESKTOP DIZAYN (CSS) ====================
+# ==================== MOBIL VA DESKTOP TARTIBLI DIZAYN (CSS) ====================
 st.markdown(
     """
     <style>
+    section[data-testid="stSidebar"], [data-testid="collapsedControl"] {
+        display: none !important;
+    }
+
     .block-container {
-        padding-top: 1rem !important;
+        padding-top: 0.9rem !important;
         padding-bottom: 2.2rem !important;
-        padding-left: 0.9rem !important;
-        padding-right: 0.9rem !important;
+        padding-left: 0.85rem !important;
+        padding-right: 0.85rem !important;
         max-width: 1100px;
     }
 
@@ -39,36 +43,18 @@ st.markdown(
         min-height: 44px !important;
     }
 
-    /* Form va sahifadagi asosiy tugmalar */
+    /* Tugmalarni tekis va qulay qilish */
+    .stButton > button,
     .stDownloadButton > button,
     div[data-testid="stFormSubmitButton"] > button {
         width: 100% !important;
-        min-height: 46px !important;
-        font-size: 15px !important;
-        font-weight: 600 !important;
-        border-radius: 10px !important;
-    }
-
-    /* Sarlavha yonidagi ixcham tugmalar */
-    .header-actions .stButton > button {
-        min-height: 38px !important;
-        height: 38px !important;
-        padding: 0 10px !important;
-        font-size: 14px !important;
-        border-radius: 8px !important;
-        white-space: nowrap !important;
-    }
-
-    /* Yon menyudagi (Sidebar) bo'lim tugmalari */
-    section[data-testid="stSidebar"] .stButton > button {
-        width: 100% !important;
         min-height: 44px !important;
-        text-align: left !important;
-        justify-content: flex-start !important;
-        font-size: 15px !important;
+        height: 44px !important;
+        font-size: 14px !important;
         font-weight: 600 !important;
         border-radius: 10px !important;
-        margin-bottom: 4px !important;
+        padding: 0 10px !important;
+        white-space: nowrap !important;
     }
 
     /* Kirim/Chiqim radio tugmalari yonma-yon */
@@ -87,13 +73,19 @@ st.markdown(
         cursor: pointer !important;
     }
 
-    /* Sarlavha qatori */
+    /* Tepada ixcham sarlavha va amallar qatori */
+    .top-header-box {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
     .app-main-title {
         font-size: 1.45rem;
         font-weight: 700;
         margin: 0;
-        line-height: 38px;
-        white-space: nowrap;
+        line-height: 1.2;
     }
 
     /* KPI kartalar */
@@ -122,9 +114,10 @@ st.markdown(
     .kpi-in  { color: #10B981; }
     .kpi-out { color: #F87171; }
 
+    /* Telefonda (<= 640px) KPI va menyuni chiroyli tartiblash */
     @media (max-width: 640px) {
         .app-main-title {
-            font-size: 1.2rem;
+            font-size: 1.25rem;
         }
         .kpi-wrapper {
             grid-template-columns: 1fr 1fr;
@@ -314,39 +307,18 @@ if not df_goals.empty:
     df_goals["CurrentNum"] = df_goals["CurrentAmount"].apply(to_float)
 
 
-# ==================== YON TOMONDA CHIQUVCHI MENYU (SIDEBAR) ====================
-if "page" not in st.session_state:
-    st.session_state.page = "kiritish"
-
-with st.sidebar:
-    st.markdown("### 📂 Bo'limlar")
-    nav_items = [
-        ("kiritish", "➕ Kirim / Chiqim"),
-        ("byudjet", "📊 Byudjet (Limitlar)"),
-        ("maqsadlar", "🎯 Maqsadlar"),
-        ("kategoriyalar", "⚙️ Kategoriyalar"),
-        ("tarix", "📋 Tarix va Excel"),
-    ]
-    for key, title_lbl in nav_items:
-        active_prefix = "▸ " if st.session_state.page == key else ""
-        if st.button(f"{active_prefix}{title_lbl}", key=f"side_{key}"):
-            st.session_state.page = key
-            st.rerun()
-
-# ==================== SARLAVHA YONIDA TUGMALAR VA KPI ====================
-st.markdown('<div class="header-actions">', unsafe_allow_html=True)
-top_cols = st.columns([6, 1.5, 1.5])
-with top_cols[0]:
+# ==================== YUQORI SARLAVHA VA TARTIBLI MENYU ====================
+top_row = st.columns([6, 2, 2])
+with top_row[0]:
     st.markdown('<div class="app-main-title">💰 Shaxsiy Moliya</div>', unsafe_allow_html=True)
-with top_cols[1]:
+with top_row[1]:
     if st.button("🔄", key="btn_refresh", help="Yangilash"):
         refresh_data()
         st.rerun()
-with top_cols[2]:
+with top_row[2]:
     if st.button("🔒", key="btn_logout", help="Chiqish"):
         st.session_state.authenticated = False
         st.rerun()
-st.markdown("</div>", unsafe_allow_html=True)
 
 total_in = df_trans[df_trans["Type"].str.lower() == "kirim"]["AmountNum"].sum() if not df_trans.empty else 0.0
 total_out = df_trans[df_trans["Type"].str.lower() == "chiqim"]["AmountNum"].sum() if not df_trans.empty else 0.0
@@ -371,6 +343,39 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+if "page" not in st.session_state:
+    st.session_state.page = "kiritish"
+
+# Tepada 2 ta bir xil va muvozanatli qator: 3 ta + 2 ta tugma
+menu_row_1 = st.columns([1, 1, 1])
+with menu_row_1[0]:
+    label_1 = "● ➕ Kiritish" if st.session_state.page == "kiritish" else "➕ Kiritish"
+    if st.button(label_1, key="nav_kiritish"):
+        st.session_state.page = "kiritish"
+        st.rerun()
+with menu_row_1[1]:
+    label_2 = "● 📊 Byudjet" if st.session_state.page == "byudjet" else "📊 Byudjet"
+    if st.button(label_2, key="nav_byudjet"):
+        st.session_state.page = "byudjet"
+        st.rerun()
+with menu_row_1[2]:
+    label_3 = "● 🎯 Maqsadlar" if st.session_state.page == "maqsadlar" else "🎯 Maqsadlar"
+    if st.button(label_3, key="nav_maqsadlar"):
+        st.session_state.page = "maqsadlar"
+        st.rerun()
+
+menu_row_2 = st.columns([1, 1])
+with menu_row_2[0]:
+    label_4 = "● ⚙️ Kategoriyalar" if st.session_state.page == "kategoriyalar" else "⚙️ Kategoriyalar"
+    if st.button(label_4, key="nav_kategoriyalar"):
+        st.session_state.page = "kategoriyalar"
+        st.rerun()
+with menu_row_2[1]:
+    label_5 = "● 📋 Tarix va Excel" if st.session_state.page == "tarix" else "📋 Tarix va Excel"
+    if st.button(label_5, key="nav_tarix"):
+        st.session_state.page = "tarix"
+        st.rerun()
 
 st.markdown("---")
 
