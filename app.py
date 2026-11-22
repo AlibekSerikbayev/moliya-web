@@ -152,30 +152,8 @@ st.markdown(
 )
 
 
-# ==================== STREAMLIT VERSIYA MOSLASHUVI ====================
-def rerun_app():
-    if hasattr(st, "rerun"):
-        st.rerun()
-    else:
-        st.experimental_rerun()
-
-
-cache_resource = getattr(st, "cache_resource", getattr(st, "experimental_singleton", st.cache))
-
-
-def cache_data(ttl=15):
-    if hasattr(st, "cache_data"):
-        return st.cache_data(ttl=ttl)
-    if hasattr(st, "experimental_memo"):
-        return st.experimental_memo(ttl=ttl)
-    return st.cache(ttl=ttl, allow_output_mutation=True)
-
-
 def refresh_data():
-    if hasattr(st, "cache_data"):
-        st.cache_data.clear()
-    elif hasattr(st, "experimental_memo"):
-        st.experimental_memo.clear()
+    st.cache_data.clear()
 
 
 def has_secrets_file() -> bool:
@@ -185,10 +163,15 @@ def has_secrets_file() -> bool:
 
 
 def get_secret(key: str, default: str = "") -> str:
+    try:
+        if key in st.secrets:
+            return str(st.secrets[key]).strip()
+    except Exception:
+        pass
     if has_secrets_file():
         try:
             if key in st.secrets:
-                return str(st.secrets[key])
+                return str(st.secrets[key]).strip()
         except Exception:
             pass
     val = os.getenv(key)
@@ -200,7 +183,7 @@ APP_PASSWORD = get_secret("APP_PASSWORD", "12345")
 USER_ID = int(get_secret("DEFAULT_USER_ID", "1"))
 
 if not SPREADSHEET_ID:
-    st.error("❌ .env faylida SPREADSHEET_ID topilmadi!")
+    st.error("❌ SPREADSHEET_ID topilmadi! Streamlit Secrets yoki .env faylini tekshiring.")
     st.stop()
 
 # ==================== PAROL BILAN HIMOYA (LOGIN) ====================
@@ -215,7 +198,7 @@ if not st.session_state.authenticated:
         if submitted:
             if pwd == APP_PASSWORD:
                 st.session_state.authenticated = True
-                rerun_app()
+                st.rerun()
             else:
                 st.error("❌ Parol noto'g'ri!")
     st.stop()
@@ -228,14 +211,18 @@ SCOPES = [
 ]
 
 
-@cache_resource
+@st.cache_resource
 def get_spreadsheet():
-    if has_secrets_file() and "gcp_service_account" in st.secrets:
-        creds_dict = dict(st.secrets["gcp_service_account"])
-        creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-    else:
-        creds = Credentials.from_service_account_file("credentials.json", scopes=SCOPES)
+    try:
+        if "gcp_service_account" in st.secrets:
+            creds_dict = dict(st.secrets["gcp_service_account"])
+            creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+            gc = gspread.authorize(creds)
+            return gc.open_by_key(SPREADSHEET_ID)
+    except Exception:
+        pass
 
+    creds = Credentials.from_service_account_file("credentials.json", scopes=SCOPES)
     gc = gspread.authorize(creds)
     return gc.open_by_key(SPREADSHEET_ID)
 
@@ -260,7 +247,7 @@ def next_id(df: pd.DataFrame) -> int:
     return int(ids.max()) + 1 if not ids.empty else 1
 
 
-@cache_data(ttl=15)
+@st.cache_data(ttl=15)
 def load_sheet_df(sheet_name: str) -> pd.DataFrame:
     ws = sh.worksheet(sheet_name)
     rows = ws.get_all_values()
@@ -299,11 +286,11 @@ with head_c1:
 with head_c2:
     if st.button("🔄 Yangilash"):
         refresh_data()
-        rerun_app()
+        st.rerun()
 with head_c3:
     if st.button("🔒 Chiqish"):
         st.session_state.authenticated = False
-        rerun_app()
+        st.rerun()
 
 total_in = df_trans[df_trans["Type"].str.lower() == "kirim"]["AmountNum"].sum() if not df_trans.empty else 0.0
 total_out = df_trans[df_trans["Type"].str.lower() == "chiqim"]["AmountNum"].sum() if not df_trans.empty else 0.0
@@ -389,7 +376,7 @@ if st.session_state.page == "kiritish":
                     )
                     refresh_data()
                     st.success(f"{t_type} saqlandi!")
-                    rerun_app()
+                    st.rerun()
 
     with right_col:
         st.subheader("📊 Xarajatlar taqsimoti")
@@ -453,7 +440,7 @@ elif st.session_state.page == "byudjet":
                     ws_b.append_row([new_id, USER_ID, b_cat, b_limit, spent_f, rem_f], value_input_option="USER_ENTERED")
                 refresh_data()
                 st.success(f"**{b_cat}** limiti saqlandi!")
-                rerun_app()
+                st.rerun()
 
     with b_col2:
         st.subheader("Limitlar holati")
@@ -505,7 +492,7 @@ elif st.session_state.page == "maqsadlar":
                     )
                     refresh_data()
                     st.success("Maqsad yaratildi!")
-                    rerun_app()
+                    st.rerun()
 
         if not df_goals.empty:
             st.subheader("💰 Pul jamg'arish")
@@ -525,7 +512,7 @@ elif st.session_state.page == "maqsadlar":
                                 break
                         refresh_data()
                         st.success("Jamg'arma qo'shildi!")
-                        rerun_app()
+                        st.rerun()
 
     with g_col2:
         st.subheader("Maqsadlar holati")
@@ -560,7 +547,7 @@ elif st.session_state.page == "kategoriyalar":
                     ws_c.append_row([new_id, USER_ID, c_name.strip(), c_type], value_input_option="USER_ENTERED")
                     refresh_data()
                     st.success(f"'{c_name}' qo'shildi!")
-                    rerun_app()
+                    st.rerun()
 
     with c_col2:
         st.subheader("Mavjud kategoriyalar")
