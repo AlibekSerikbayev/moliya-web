@@ -21,18 +21,19 @@ st.set_page_config(
 
 load_dotenv()
 
-# ==================== MOBIL TELEFON UCHUN MAXSUS DIZAYN (CSS) ====================
+# ==================== MOBIL VA DESKTOP TARTIBLI DIZAYN (CSS) ====================
 st.markdown(
     """
     <style>
     section[data-testid="stSidebar"], [data-testid="collapsedControl"] {
         display: none !important;
     }
+
     .block-container {
-        padding-top: 1rem !important;
-        padding-bottom: 2rem !important;
-        padding-left: 0.9rem !important;
-        padding-right: 0.9rem !important;
+        padding-top: 0.9rem !important;
+        padding-bottom: 2.2rem !important;
+        padding-left: 0.85rem !important;
+        padding-right: 0.85rem !important;
         max-width: 1100px;
     }
 
@@ -42,16 +43,21 @@ st.markdown(
         min-height: 44px !important;
     }
 
-    /* Barcha tugmalarni barmoq bilan bosishga qulay qilish */
-    .stButton > button, .stDownloadButton > button, div[data-testid="stFormSubmitButton"] > button {
+    /* Tugmalarni tekis va qulay qilish */
+    .stButton > button,
+    .stDownloadButton > button,
+    div[data-testid="stFormSubmitButton"] > button {
         width: 100% !important;
-        min-height: 46px !important;
-        font-size: 15px !important;
+        min-height: 44px !important;
+        height: 44px !important;
+        font-size: 14px !important;
         font-weight: 600 !important;
         border-radius: 10px !important;
+        padding: 0 10px !important;
+        white-space: nowrap !important;
     }
 
-    /* Kirim/Chiqim tanlash radio tugmalarini yonma-yon katta blok qilish */
+    /* Kirim/Chiqim radio tugmalari yonma-yon */
     div[role="radiogroup"] {
         display: flex !important;
         flex-direction: row !important;
@@ -62,60 +68,79 @@ st.markdown(
         background: rgba(255, 255, 255, 0.06) !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
         border-radius: 10px !important;
-        padding: 10px 14px !important;
+        padding: 8px 12px !important;
         justify-content: center !important;
         cursor: pointer !important;
     }
 
-    /* Mobil va kompyuter uchun moslashuvchan KPI kartalar */
+    /* Tepada ixcham sarlavha va amallar qatori */
+    .top-header-box {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    .app-main-title {
+        font-size: 1.45rem;
+        font-weight: 700;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    /* KPI kartalar */
     .kpi-wrapper {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 10px;
-        margin-bottom: 14px;
+        margin-bottom: 12px;
     }
     .kpi-card {
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 12px;
-        padding: 12px 14px;
+        padding: 11px 13px;
     }
     .kpi-label {
-        font-size: 13px;
+        font-size: 12px;
         opacity: 0.8;
-        margin-bottom: 4px;
+        margin-bottom: 3px;
     }
     .kpi-value {
-        font-size: 20px;
+        font-size: 19px;
         font-weight: 700;
     }
     .kpi-bal { color: #38BDF8; }
     .kpi-in  { color: #10B981; }
     .kpi-out { color: #F87171; }
 
+    /* Telefonda (<= 640px) KPI va menyuni chiroyli tartiblash */
     @media (max-width: 640px) {
+        .app-main-title {
+            font-size: 1.25rem;
+        }
         .kpi-wrapper {
             grid-template-columns: 1fr 1fr;
+            gap: 8px;
         }
         .kpi-card.main-bal {
             grid-column: span 2;
             text-align: center;
         }
         .kpi-value {
-            font-size: 18px;
-        }
-        h1 {
-            font-size: 1.45rem !important;
+            font-size: 17px;
         }
         h2, h3 {
-            font-size: 1.15rem !important;
+            font-size: 1.12rem !important;
         }
     }
 
+    /* Tranzaksiya kartochkalari */
     .tx-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 10px;
         background: rgba(255, 255, 255, 0.04);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 10px;
@@ -125,10 +150,13 @@ st.markdown(
     .tx-left {
         display: flex;
         flex-direction: column;
+        min-width: 0;
     }
     .tx-title {
         font-weight: 600;
         font-size: 15px;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .tx-meta {
         font-size: 12px;
@@ -137,13 +165,13 @@ st.markdown(
     .tx-amt-in {
         color: #10B981;
         font-weight: 700;
-        font-size: 15px;
+        font-size: 14px;
         white-space: nowrap;
     }
     .tx-amt-out {
         color: #F87171;
         font-weight: 700;
-        font-size: 15px;
+        font-size: 14px;
         white-space: nowrap;
     }
     </style>
@@ -279,16 +307,16 @@ if not df_goals.empty:
     df_goals["CurrentNum"] = df_goals["CurrentAmount"].apply(to_float)
 
 
-# ==================== SARLAVHA VA IXCHAM KPI BLOKI ====================
-head_c1, head_c2, head_c3 = st.columns([4, 1, 1])
-with head_c1:
-    st.markdown("# 💰 Shaxsiy Moliya")
-with head_c2:
-    if st.button("🔄 Yangilash"):
+# ==================== YUQORI SARLAVHA VA TARTIBLI MENYU ====================
+top_row = st.columns([6, 2, 2])
+with top_row[0]:
+    st.markdown('<div class="app-main-title">💰 Shaxsiy Moliya</div>', unsafe_allow_html=True)
+with top_row[1]:
+    if st.button("🔄", key="btn_refresh", help="Yangilash"):
         refresh_data()
         st.rerun()
-with head_c3:
-    if st.button("🔒 Chiqish"):
+with top_row[2]:
+    if st.button("🔒", key="btn_logout", help="Chiqish"):
         st.session_state.authenticated = False
         st.rerun()
 
@@ -316,28 +344,38 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ==================== MOBIL VA DESKTOP UCHUN QULAY MENYU TUGMALARI ====================
 if "page" not in st.session_state:
     st.session_state.page = "kiritish"
 
-nav_r1 = st.columns(3)
-with nav_r1[0]:
-    if st.button("➕ Kiritish"):
+# Tepada 2 ta bir xil va muvozanatli qator: 3 ta + 2 ta tugma
+menu_row_1 = st.columns([1, 1, 1])
+with menu_row_1[0]:
+    label_1 = "● ➕ Kiritish" if st.session_state.page == "kiritish" else "➕ Kiritish"
+    if st.button(label_1, key="nav_kiritish"):
         st.session_state.page = "kiritish"
-with nav_r1[1]:
-    if st.button("📊 Byudjet"):
+        st.rerun()
+with menu_row_1[1]:
+    label_2 = "● 📊 Byudjet" if st.session_state.page == "byudjet" else "📊 Byudjet"
+    if st.button(label_2, key="nav_byudjet"):
         st.session_state.page = "byudjet"
-with nav_r1[2]:
-    if st.button("🎯 Maqsadlar"):
+        st.rerun()
+with menu_row_1[2]:
+    label_3 = "● 🎯 Maqsadlar" if st.session_state.page == "maqsadlar" else "🎯 Maqsadlar"
+    if st.button(label_3, key="nav_maqsadlar"):
         st.session_state.page = "maqsadlar"
+        st.rerun()
 
-nav_r2 = st.columns(2)
-with nav_r2[0]:
-    if st.button("⚙️ Kategoriyalar"):
+menu_row_2 = st.columns([1, 1])
+with menu_row_2[0]:
+    label_4 = "● ⚙️ Kategoriyalar" if st.session_state.page == "kategoriyalar" else "⚙️ Kategoriyalar"
+    if st.button(label_4, key="nav_kategoriyalar"):
         st.session_state.page = "kategoriyalar"
-with nav_r2[1]:
-    if st.button("📋 Tarix va Excel"):
+        st.rerun()
+with menu_row_2[1]:
+    label_5 = "● 📋 Tarix va Excel" if st.session_state.page == "tarix" else "📋 Tarix va Excel"
+    if st.button(label_5, key="nav_tarix"):
         st.session_state.page = "tarix"
+        st.rerun()
 
 st.markdown("---")
 
