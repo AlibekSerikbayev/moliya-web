@@ -1,0 +1,9 @@
+streamlit
+pandas
+plotly
+python-telegram-bot>=21.0
+gspread>=6.0.0
+google-auth>=2.28.0
+matplotlib>=3.8.0
+openpyxl>=3.1.2
+python-dotenv>=1.0.1
